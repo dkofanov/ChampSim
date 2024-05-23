@@ -20,7 +20,7 @@
 #include "stats_printer.h"
 #include <nlohmann/json.hpp>
 
-void to_json(nlohmann::json& j, const O3_CPU::stats_type stats)
+void to_json(nlohmann::json& j, const O3_CPU::stats_type &stats)
 {
   std::array<std::pair<std::string, std::size_t>, 6> types{
       {std::pair{"BRANCH_DIRECT_JUMP", BRANCH_DIRECT_JUMP}, std::pair{"BRANCH_INDIRECT", BRANCH_INDIRECT}, std::pair{"BRANCH_CONDITIONAL", BRANCH_CONDITIONAL},
@@ -34,10 +34,16 @@ void to_json(nlohmann::json& j, const O3_CPU::stats_type stats)
   for (auto [name, idx] : types)
     mpki.emplace(name, stats.branch_type_misses[idx]);
 
-  j = nlohmann::json{{"instructions", stats.instrs()},
+  std::map<std::string, std::vector<uint8_t>> detailed{};
+  for (auto [id, br_stats] : stats.detailed_branch_stats)
+    detailed.emplace(std::to_string(id), std::move(br_stats.History()));
+
+  j = nlohmann::json({{"instructions", stats.instrs()},
                      {"cycles", stats.cycles()},
                      {"Avg ROB occupancy at mispredict", std::ceil(stats.total_rob_occupancy_at_branch_mispredict) / std::ceil(total_mispredictions)},
-                     {"mispredict", mpki}};
+                     {"Avg ROB occupancy at mispredict", std::ceil(stats.total_rob_occupancy_at_branch_mispredict) / std::ceil(total_mispredictions)},
+                     {"details", detailed},
+                     {"mispredict", mpki}});
 }
 
 void to_json(nlohmann::json& j, const CACHE::stats_type stats)

@@ -160,6 +160,12 @@ bool O3_CPU::do_predict_branch(ooo_model_instr& arch_instr)
     if constexpr (champsim::debug_print) {
       fmt::print("[BRANCH] instr_id: {} ip: {:#x} taken: {}\n", arch_instr.instr_id, arch_instr.ip, arch_instr.branch_taken);
     }
+    sim_stats.detailed_branch_stats[arch_instr.ip].set(
+      (arch_instr.branch_type == BRANCH_CONDITIONAL),
+      (arch_instr.branch_taken),
+      (arch_instr.branch_taken == arch_instr.branch_prediction),
+      (arch_instr.branch_target == predicted_branch_target)
+    );
 
     // call code prefetcher every time the branch predictor is used
     l1i->impl_prefetcher_branch_operate(arch_instr.ip, arch_instr.branch_type, predicted_branch_target);

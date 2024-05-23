@@ -25,6 +25,7 @@
 #include <array>
 #include <bitset>
 #include <deque>
+#include <map>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -69,6 +70,27 @@ struct cpu_stats {
 
   std::array<long long, 8> total_branch_types = {};
   std::array<long long, 8> branch_type_misses = {};
+  
+  struct TakenNotTakenHistory {
+    static constexpr uint8_t IS_CONDITIONAL_BIT = 1 << 0;
+    static constexpr uint8_t TRACE_TAKEN_BIT = 1 << 1;
+    static constexpr uint8_t DIR_CORRECT_BIT = 1 << 2;
+    static constexpr uint8_t TGT_CORRECT_BIT = 1 << 3;
+    void set(bool conditional, bool taken, bool dir_correct, bool tgt_correct)
+    {
+      uint8_t res = 0;
+      if (conditional)  { res |= IS_CONDITIONAL_BIT; }
+      if (taken)        { res |= TRACE_TAKEN_BIT; }
+      if (dir_correct)  { res |= DIR_CORRECT_BIT; }
+      if (tgt_correct)  { res |= TGT_CORRECT_BIT; }
+      history_.push_back(res);
+    }
+
+    auto &&History() { return std::move(history_); }
+  private:
+    std::vector<uint8_t> history_;
+  };
+  std::map<uint64_t, TakenNotTakenHistory> detailed_branch_stats = {};
 
   uint64_t instrs() const { return end_instrs - begin_instrs; }
   uint64_t cycles() const { return end_cycles - begin_cycles; }
